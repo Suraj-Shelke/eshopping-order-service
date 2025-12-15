@@ -1,15 +1,23 @@
 package com.sp.eshopping_order_service.service.impl;
 
+import com.sp.eshopping_order_service.exception.OrderServiceCustomException;
 import com.sp.eshopping_order_service.feign.PaymentService;
 import com.sp.eshopping_order_service.feign.ProductService;
 import com.sp.eshopping_order_service.model.Order;
+import com.sp.eshopping_order_service.model.PaymentDetails;
+import com.sp.eshopping_order_service.model.ProductDetails;
 import com.sp.eshopping_order_service.payload.request.OrderRequest;
 import com.sp.eshopping_order_service.payload.request.PaymentRequest;
 import com.sp.eshopping_order_service.payload.response.OrderResponse;
+import com.sp.eshopping_order_service.payload.response.PaymentResponse;
+import com.sp.eshopping_order_service.payload.response.ProductResponse;
 import com.sp.eshopping_order_service.repository.OrderRepository;
 import com.sp.eshopping_order_service.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -87,6 +95,73 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse getOrderDetails(long orderId) {
-        return null;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        //headers.set("Authorization", bearerToken);
+
+        HttpEntity<String> request = new HttpEntity<String>(headers);
+
+        log.info("OrderServiceImpl | getOrderDetails | Get order details for Order Id : {}", orderId);
+
+        Order order
+                = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderServiceCustomException("Order not found for the order Id:" + orderId,
+                        "NOT_FOUND",
+                        404));
+
+        log.info("OrderServiceImpl | getOrderDetails | Invoking Product service to fetch the product for id: {}", order.getProductId());
+        ProductResponse productResponse
+                = restTemplate.getForObject(
+                "http://product-service/product/" + order.getProductId(),
+                ProductResponse.class
+        );
+
+//        ResponseEntity<ProductResponse> responseProduct = restTemplate.exchange(
+//                "http://product-service/product/" + order.getProductId(),
+//                HttpMethod.GET, request, ProductResponse.class);
+//        ProductResponse productResponse = responseProduct.getBody();
+
+        log.info("OrderServiceImpl | getOrderDetails | Getting payment information form the payment Service");
+        PaymentResponse paymentResponse
+                = restTemplate.getForObject(
+                "http://payment-service/payment/order/" + order.getId(),
+                PaymentResponse.class
+        );
+
+//        ResponseEntity<PaymentResponse> responsePayment = restTemplate.exchange(
+//                "http://payment-service/payment/order/" + order.getId(),
+//                HttpMethod.GET, request, PaymentResponse.class);
+//        PaymentResponse paymentResponse = responsePayment.getBody();
+
+        ProductDetails productDetails
+                = ProductDetails
+                .builder()
+                .productName(productResponse.getProductName())
+                .productId(productResponse.getProductId())
+                .build();
+
+        PaymentDetails paymentDetails
+                = PaymentDetails
+                .builder()
+                .paymentId(paymentResponse.getPaymentId())
+                .paymentStatus(paymentResponse.getStatus())
+                .paymentDate(paymentResponse.getPaymentDate())
+                .paymentMode(paymentResponse.getPaymentMode())
+                .build();
+
+        OrderResponse orderResponse
+                = OrderResponse.builder()
+                .orderId(order.getId())
+                .orderStatus(order.getOrderStatus())
+                .amount(order.getAmount())
+                .orderDate(order.getOrderDate())
+                .productDetails(productDetails)
+                .paymentDetails(paymentDetails)
+                .build();
+
+        log.info("OrderServiceImpl | getOrderDetails | orderResponse : " + orderResponse.toString());
+
+        return orderResponse;
     }
 }
