@@ -11,9 +11,7 @@ import java.time.Instant;
 @Entity
 @Table(name = "ORDER_DETAILS")
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -33,4 +31,12 @@ public class Order {
 
     @Column(name = "TOTAL_AMOUNT")
     private long amount;
+
+    public Order(long productId, long quantity, Instant orderDate, String orderStatus, long amount) {
+        this.productId = productId;
+        this.quantity = quantity;
+        this.orderDate = orderDate;
+        this.orderStatus = orderStatus;
+        this.amount = amount;
+    }
 }
