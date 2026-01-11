@@ -10,10 +10,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class RestResponseEntityExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(OrderServiceCustomException.class)
     public ResponseEntity<ErrorResponse> handleCustomException(OrderServiceCustomException exception){
-        return new ResponseEntity<>(new ErrorResponse().builder()
-                .errorMessage(exception.getMessage())
-                .errorCode(exception.getErrorCode())
-                .build(),
-                HttpStatus.valueOf(exception.getStatus()));
+
+        ErrorResponse error=new ErrorResponse(exception.getMessage(),exception.getErrorCode());
+        return new ResponseEntity<>(error, HttpStatus.valueOf(exception.getStatus()));
     }
 }

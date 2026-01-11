@@ -13,8 +13,9 @@ import com.sp.eshopping_order_service.payload.response.PaymentResponse;
 import com.sp.eshopping_order_service.payload.response.ProductResponse;
 import com.sp.eshopping_order_service.repository.OrderRepository;
 import com.sp.eshopping_order_service.service.OrderService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -24,10 +25,9 @@ import org.springframework.web.client.RestTemplate;
 import java.time.Instant;
 
 @Service
-@Slf4j
-@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
+    private static final Logger log= LoggerFactory.getLogger(OrderServiceImpl.class);
     private final OrderRepository orderRepository;
 
     private final RestTemplate restTemplate;
@@ -35,6 +35,13 @@ public class OrderServiceImpl implements OrderService {
     private final ProductService productService;
 
     private final PaymentService paymentService;
+    @Autowired
+    public OrderServiceImpl(OrderRepository orderRepository, RestTemplate restTemplate, ProductService productService, PaymentService paymentService) {
+        this.orderRepository = orderRepository;
+        this.restTemplate = restTemplate;
+        this.productService = productService;
+        this.paymentService = paymentService;
+    }
 
     @Override
     public long placeOrder(OrderRequest orderRequest) {
@@ -66,12 +73,10 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("OrderServiceImpl | placeOrder | Calling Payment Service to complete the payment");
 
-        PaymentRequest paymentRequest
-                = PaymentRequest.builder()
-                .orderId(order.getId())
-                .paymentMode(orderRequest.getPaymentMode())
-                .amount(orderRequest.getTotalAmount())
-                .build();
+        PaymentRequest paymentRequest =new PaymentRequest();
+        paymentRequest.setOrderId(order.getId());
+        paymentRequest.setPaymentMode(orderRequest.getPaymentMode());
+        paymentRequest.setAmount(orderRequest.getTotalAmount());
 
         String orderStatus = null;
 
@@ -134,31 +139,23 @@ public class OrderServiceImpl implements OrderService {
 //                HttpMethod.GET, request, PaymentResponse.class);
 //        PaymentResponse paymentResponse = responsePayment.getBody();
 
-        ProductDetails productDetails
-                = ProductDetails
-                .builder()
-                .productName(productResponse.getProductName())
-                .productId(productResponse.getProductId())
-                .build();
+        ProductDetails productDetails = new ProductDetails();
+        productDetails.setProductName(productResponse.getProductName());
+        productDetails.setProductId(productResponse.getProductId());
 
-        PaymentDetails paymentDetails
-                = PaymentDetails
-                .builder()
-                .paymentId(paymentResponse.getPaymentId())
-                .paymentStatus(paymentResponse.getStatus())
-                .paymentDate(paymentResponse.getPaymentDate())
-                .paymentMode(paymentResponse.getPaymentMode())
-                .build();
+        PaymentDetails paymentDetails = new PaymentDetails();
+        paymentDetails.setPaymentId(paymentResponse.getPaymentId());
+        paymentDetails.setPaymentStatus(paymentResponse.getStatus());
+        paymentDetails.setPaymentMode(paymentResponse.getPaymentMode());
+        paymentDetails.setPaymentDate(paymentResponse.getPaymentDate());
 
-        OrderResponse orderResponse
-                = OrderResponse.builder()
-                .orderId(order.getId())
-                .orderStatus(order.getOrderStatus())
-                .amount(order.getAmount())
-                .orderDate(order.getOrderDate())
-                .productDetails(productDetails)
-                .paymentDetails(paymentDetails)
-                .build();
+        OrderResponse orderResponse = new OrderResponse();
+        orderResponse.setOrderId(order.getId());
+        orderResponse.setOrderStatus(order.getOrderStatus());
+        orderResponse.setAmount(order.getAmount());
+        orderResponse.setOrderDate(order.getOrderDate());
+        orderResponse.setProductDetails(productDetails);
+        orderResponse.setPaymentDetails(paymentDetails);
 
         log.info("OrderServiceImpl | getOrderDetails | orderResponse : " + orderResponse.toString());
 
