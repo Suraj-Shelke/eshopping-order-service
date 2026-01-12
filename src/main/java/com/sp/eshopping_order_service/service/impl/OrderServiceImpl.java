@@ -118,30 +118,32 @@ public class OrderServiceImpl implements OrderService {
         log.info("OrderServiceImpl | getOrderDetails | Invoking Product service to fetch the product for id: {}", order.getProductId());
         ProductResponse productResponse
                 = restTemplate.getForObject(
-                "http://product-service/product/" + order.getProductId(),
+                "http://eshopping-product-service/product/" + order.getProductId(),
                 ProductResponse.class
         );
 
 //        ResponseEntity<ProductResponse> responseProduct = restTemplate.exchange(
-//                "http://product-service/product/" + order.getProductId(),
+//                "http://eshopping-product-service/" + order.getProductId(),
 //                HttpMethod.GET, request, ProductResponse.class);
 //        ProductResponse productResponse = responseProduct.getBody();
 
         log.info("OrderServiceImpl | getOrderDetails | Getting payment information form the payment Service");
         PaymentResponse paymentResponse
                 = restTemplate.getForObject(
-                "http://payment-service/payment/order/" + order.getId(),
+                "http://eshopping-payment-service/payment/order/" + order.getId(),
                 PaymentResponse.class
         );
 
 //        ResponseEntity<PaymentResponse> responsePayment = restTemplate.exchange(
-//                "http://payment-service/payment/order/" + order.getId(),
+//                "http://eshopping-payment-service/payment/order/" + order.getId(),
 //                HttpMethod.GET, request, PaymentResponse.class);
 //        PaymentResponse paymentResponse = responsePayment.getBody();
 
         ProductDetails productDetails = new ProductDetails();
         productDetails.setProductName(productResponse.getProductName());
         productDetails.setProductId(productResponse.getProductId());
+        productDetails.setQuantity(order.getQuantity());
+        productDetails.setPrice(productResponse.getPrice());
 
         PaymentDetails paymentDetails = new PaymentDetails();
         paymentDetails.setPaymentId(paymentResponse.getPaymentId());
